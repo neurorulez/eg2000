@@ -68,6 +68,7 @@ glue Glue
 	.power  (power  ),
 	.hsync  (hsync  ),
 	.vsync  (vsync  ),
+	.ce_pix (ce_pix ),
 	.pixel  (pixel  ),
 	.color  (color  ),
 	.tape   (tape   ),
@@ -119,53 +120,75 @@ assign led = tape;
 
 //-------------------------------------------------------------------------------------------------
 
+
 localparam CONF_STR = {
-	"EG2000;;",
-	"T0,Reset;",
-	"V,v1.0"
+        "EG2000;;",
+        "T0,Reset;",
+        "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+        "V,v1.1"
 };
 
 wire[31:0] status;
 wire[ 1:0] ps2;
 
-user_io #(.STRLEN(($size(CONF_STR)>>3))) userIo
-( 
-	.conf_str    (CONF_STR),
-	.clk_sys     (clock   ),
-	.SPI_CLK     (spiCk   ),
-	.SPI_SS_IO   (cfgD0   ),
-	.SPI_MISO    (spiDo   ),
-	.SPI_MOSI    (spiDi   ),
-	.status      (status  ),
-	.ps2_kbd_clk (ps2[0]  ),
-	.ps2_kbd_data(ps2[1]  ),
-	.scandoubler_disable(scandoubler_disable)
+
+
+wire       scandoubler_disable;
+
+mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
+(  
+    .ioctl_ce    (1),
+    .conf_str    (CONF_STR),
+    .clk_sys     (clock   ),
+    .SPI_SCK     (spiCk   ),
+    .CONF_DATA0  (cfgD0   ),
+    .SPI_SS2     (spiS2   ),
+    .SPI_DO      (spiDo   ),
+    .SPI_DI      (spiDi   ),
+    .status      (status  ),
+    .scandoubler_disable(scandoubler_disable),
+    .ypbpr       (ypbpr   ),
+	 .ps2_kbd_clk (ps2[0]  ),
+	 .ps2_kbd_data(ps2[1]  ),
+
+    // unused
+  	 .ps2_key       (),
+    .ps2_mouse_clk (),
+    .ps2_mouse_data(),
+    .joystick_analog_0(),
+    .joystick_analog_1()
 );
 
-mist_video mistVideo
+wire [1:0] scale = status[3:2];
+
+
+video_mixer video_mixer
 (
-	.clk_sys   (clock      ),
-	.SPI_SCK   (spiCk      ),
-	.SPI_DI    (spiDi      ),
-	.SPI_SS3   (spiS3      ),
-	.scanlines (2'b00      ),
-	.ce_divider(1'b0       ),
-	.scandoubler_disable(scandoubler_disable),
-	.no_csync  (1'b0       ),
-	.ypbpr     (1'b0       ),
-	.rotate    (2'b00      ),
-	.blend     (1'b0       ),
-	.R         (rgbQ[17:12]),
-	.G         (rgbQ[11: 6]),
-	.B         (rgbQ[ 5: 0]),
-	.HSync     (~hsync     ),
-	.VSync     (~vsync     ),
-	.VGA_R     (rgb[17:12] ),
-	.VGA_G     (rgb[11: 6] ),
-	.VGA_B     (rgb[ 5: 0] ),
-	.VGA_VS    (sync[1]    ),
-	.VGA_HS    (sync[0]    )
+        .*,
+    .ce_pix(ce_pix),
+    .ce_pix_actual(ce_pix),
+    .hq2x(scale == 1),
+    .scanlines(scandoubler_disable ? 2'b00 : {scale==3, scale==2}),
+    .clk_sys   ( clock     ),
+    .SPI_SCK   ( spiCk     ),
+    .SPI_DI    ( spiDi     ),
+    .SPI_SS3   ( spiS3     ),
+	 .mono      (0),
+    .ypbpr     (ypbpr      ),
+    .line_start(0),
+    .ypbpr_full(0),
+    .HSync     (hsync),
+    .VSync     (vsync),
+    .R         (rgbQ[17:12]),
+    .G         (rgbQ[11: 6]),
+    .B         (rgbQ[ 5: 0]),
+    .VGA_R     (rgb[17:12] ),
+    .VGA_G     (rgb[11: 6] ),
+    .VGA_B     (rgb[ 5: 0] ),
+    .VGA_VS    (sync[1]    ),
+    .VGA_HS    (sync[0]    )
 );
+
 
 //-------------------------------------------------------------------------------------------------
 endmodule

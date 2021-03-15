@@ -7,18 +7,31 @@ module glue
 
 	output wire       hsync,
 	output wire       vsync,
+
+`ifdef USE_BLANK
+	output wire       hblank,
+	output wire       vblank,
+`endif	
+`ifdef USE_CE_PIX
+	output wire       ce_pix,
+`endif	
+
 	output wire       pixel,
 	output wire[ 3:0] color,
 
 	input  wire       tape,
+`ifdef USE_DAC
 	output wire       sound,
-
+`else
+   output wire [7:0] audio_l,
+   output wire [7:0] audio_r,
+`endif
 	input  wire[ 1:0] ps2,
 `ifdef ZX1
 	output wire       ramWe,
 	inout  wire[ 7:0] ramDQ,
 	output wire[20:0] ramA
-`elsif SIDI
+`elsif USE_SDRAM
 	output wire       ramCk,
 	output wire       ramCe,
 	output wire       ramCs,
@@ -33,8 +46,16 @@ module glue
 );
 //-------------------------------------------------------------------------------------------------
 
+`ifdef USE_CE_PIX
+assign ce_pix = pe8M8;
+`endif	
+
 reg[4:0] ce;
 always @(negedge clock) ce <= ce+1'd1;
+
+
+
+assign ce_pix = pe8M8;
 
 wire pe8M8 = ~ce[0] &  ce[1];
 wire ne8M8 = ~ce[0] & ~ce[1];
@@ -59,7 +80,7 @@ wire ioFF = !(!iorq && a[7:0] == 8'hFF);
 //-------------------------------------------------------------------------------------------------
 `ifdef ZX1
 wire reset = power & F12;
-`elsif SIDI
+`else
 wire reset = power & F11;
 `endif
 wire nmi = F5;
@@ -108,6 +129,10 @@ UM6845R Crtc
 	.RS     (crtcRs ),
 	.DI     (q      ),
 	.DO     (crtcQ  ),
+`ifdef USE_BLANK
+   .VBLANK (vblank ),
+	.HBLANK (hblank ),
+`endif	
 	.VSYNC  (vsync  ),
 	.HSYNC  (hsync  ),
 	.DE     (crtcDe ),
@@ -147,6 +172,8 @@ jt49_bus Psg
 
 //-------------------------------------------------------------------------------------------------
 
+
+`ifdef USE_DAC
 wire[9:0] dacD = { 2'b00, psgA } + { 2'b00, psgB } + { 2'b00, psgC };
 
 dac #(.MSBI(9)) Dac
@@ -156,6 +183,10 @@ dac #(.MSBI(9)) Dac
 	.d      (dacD   ),
 	.q      (sound  )
 );
+`else
+ assign audio_l = psgA+psgB+psgC;
+ assign audio_r = audio_l;
+`endif
 
 //-------------------------------------------------------------------------------------------------
 
@@ -213,7 +244,7 @@ memory Memory
 	.ramWe  (ramWe  ),
 	.ramDQ  (ramDQ  ),
 	.ramA   (ramA   )
-`elsif SIDI
+`elsif USE_SDRAM
 	.ramCk  (ramCk  ),
 	.ramCe  (ramCe  ),
 	.ramCs  (ramCs  ),

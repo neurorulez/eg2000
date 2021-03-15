@@ -30,7 +30,7 @@ module memory
 	output wire       ramWe,
 	inout  wire[ 7:0] ramDQ,
 	output wire[20:0] ramA
-`elsif SIDI
+`elsif USE_SDRAM 
 	output wire       ramCk,
 	output wire       ramCe,
 	output wire       ramCs,
@@ -40,7 +40,7 @@ module memory
 	output wire[ 1:0] ramDqm,
 	inout  wire[15:0] ramDQ,
 	output wire[ 1:0] ramBA,
-	output wire[12:0] ramA
+	output wire[12:0] ramA	
 `endif
 );
 //-------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ assign ramDQ = ramWe ? 8'bZ : d;
 assign ramA  = { 5'd0, a };
 
 wire[7:0] ramQ = ramDQ;
-`elsif SIDI
+`elsif USE_SDRAM
 
 wire sdrRd = !(!mreq && !rd);
 wire sdrWr = !(!mreq && !wr);
