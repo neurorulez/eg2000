@@ -164,7 +164,7 @@ wire [1:0] scale = status[3:2];
 
 video_mixer video_mixer
 (
-        .*,
+    .*,
     .ce_pix(ce_pix),
     .ce_pix_actual(ce_pix),
     .hq2x(scale == 1),

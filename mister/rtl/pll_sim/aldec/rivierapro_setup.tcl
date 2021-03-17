@@ -12,7 +12,7 @@
 # or its authorized distributors. Please refer to the applicable 
 # agreement for further details.
 
-# ACDS 17.0 602 linux 2021.03.15.10:18:48
+# ACDS 17.0 602 linux 2021.03.17.09:21:17
 # ----------------------------------------
 # Auto-generated simulation script rivierapro_setup.tcl
 # ----------------------------------------

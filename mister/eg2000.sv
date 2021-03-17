@@ -186,7 +186,7 @@ assign VGA_SCALER = 0;
 assign AUDIO_S = 0;
 assign AUDIO_MIX = 0;
 
-assign LED_DISK = 0;
+//assign LED_DISK = 0;
 assign LED_POWER = 0;
 assign BUTTONS = 0;
 
@@ -211,38 +211,40 @@ wire [21:0] gamma_bus;
 wire forced_scandoubler;
 wire  [1:0] buttons;
 wire [31:0] status;
-wire [10:0] ps2_key;
 wire  [1:0] ps2;
 
 
 // PS2DIV : la mitad del divisor que necesitas para dividir el clk_sys que le das al hpio, para que te de entre 10Khz y 16Kzh
 hps_io #(.STRLEN($size(CONF_STR)>>3), .PS2DIV(2500)) hps_io
 (
-	.clk_sys(clk_sys),
-	.HPS_BUS(HPS_BUS),
-	.EXT_BUS(),
+	.clk_sys		(clk_sys),
+	.HPS_BUS		(HPS_BUS),
+	.EXT_BUS		(),
 
-	.conf_str(CONF_STR),
+	.conf_str	(CONF_STR),
 	.forced_scandoubler(forced_scandoubler),
 
-	.buttons(buttons),
-	.status(status),
+	.buttons		(buttons),
+	.status		(status),
 	.status_menumask({status[5]}),
-	.ps2_kbd_clk_out(ps2[0]),
+	.ps2_kbd_clk_out (ps2[0]),
    .ps2_kbd_data_out(ps2[1])
   );
 
 ///////////////////////   CLOCKS   ///////////////////////////////
 
 wire clk_sys;
+wire pll_locked;
+
 pll pll
 (
-	.refclk(CLK_50M),
-	.rst(0),
-	.outclk_0(clk_sys)
+	.refclk   (CLK_50M),
+	.rst      (0),
+	.outclk_0 (clk_sys),
+	.locked   (pll_locked)
 );
 
-wire reset = RESET | status[0] | buttons[1];
+
 
 //////////////////////////////////////////////////////////////////
 
@@ -252,61 +254,31 @@ wire HSync;
 wire VBlank;
 wire VSync;
 wire ce_pix;
-
-wire [2:0] R;
-wire [2:0] G;
-wire [2:0] B;
-
 wire led;
 
-//eg2000 eg2000
-//(
-//	.clock    	(clk_sys),
-//	.resetOsd 	(reset),
-//	.ce_pix   	(ce_pix),
-//   .led      	(led),
-//	.HBlank     (HBlank),
-//	.VBlank     (VBlank),
-//   .rgb 			({R,G,B}),
-//	.ps2 			(ps2),
-//	.ear			(~tape_in),
-//	.audio_l 	(AUDIO_L),
-//	.audio_r    (AUDIO_R),
-//	.HSync      (HSync),
-//	.VSync      (VSync),
-//);
-
-reg[7:0] rs;
-wire power = rs[7] & ~status[0] & ~RESET & ~buttons[1];
+reg[5:0] rs;
+wire power = rs[5] & ~status[0] & ~RESET & ~buttons[1];
 always @(posedge clk_sys) if(!power) rs <= rs+1'd1;
 
 wire[3:0] color;
 
 glue Glue
 (
-	.clock  (clk_sys  ),
+	.clock  (clk_sys),
 	.power  (power  ),
-	.hsync  (HSync  ),
-	.vsync  (VSync  ),
-	.vblank (VBlank ),
-	.hblank (HBlank ),
+	.hsync  (HSync),
+	.vsync  (VSync),
+	.hblank  (HBlank),
+	.vblank  (VBlank),
+
 	.ce_pix (ce_pix ),
 	.pixel  (pixel  ),
 	.color  (color  ),
 	.tape   (~tape_in),
-	.audio_l(AUDIO_L ),
-	.audio_r(AUDIO_R ),
-	.ps2    (ps2     ),
-	.ramCk  (SDRAM_CLK),
-	.ramCe  (SDRAM_CKE),
-	.ramCs  (SDRAM_nCS),
-	.ramWe  (SDRAM_nWE),
-	.ramRas (SDRAM_nRAS),
-	.ramCas (SDRAM_nCAS),
-	.ramDqm ({SDRAM_DQMH,SDRAM_DQML}),
-	.ramDQ  (SDRAM_DQ),
-	.ramBA  (SDRAM_BA),
-	.ramA   (SDRAM_A )
+	.audio_l(AUDIO_L),
+	.audio_r(AUDIO_R),
+	.led    (led    ),
+	.ps2    (ps2    )
 );
 
 
@@ -333,19 +305,25 @@ end
 wire[17:0] rgbQ = pixel ? palette[color] : 1'd0;
 
 assign CLK_VIDEO = clk_sys;
+
+
+
+
 wire ce_pix_out;
 wire scandoubler = scale || forced_scandoubler;
 wire [2:0] scale = status[12:10];
 
 
-video_mixer #(.GAMMA(1)) video_mixer
+
+
+video_mixer #(.LINE_LENGTH(640)) video_mixer
 (
         .*,
-		  .R         ({rgbQ[17:12],2'b0}),
-	     .G         ({rgbQ[11: 6],2'b0}),
-	     .B         ({rgbQ[ 5: 0],2'b0}),
-
-        .hq2x      (scale==1)
+		  .R         		({rgbQ[17:12],2'b0}),
+	     .G         		({rgbQ[11: 6],2'b0}),
+	     .B         		({rgbQ[ 5: 0],2'b0}),
+        .hq2x      		(scale==1)
+		  
 );
 
 
@@ -356,14 +334,12 @@ video_freak video_freak
 	.*,
 	.VGA_DE_IN     (VGA_DE),
 	.VGA_DE        (),
-
 	.ARX           ((!ar) ? 12'd4 : (ar - 1'd1)),
 	.ARY           ((!ar) ? 12'd3 : 12'd0),
 	.CROP_SIZE     (0),
 	.CROP_OFF      (0),
 	.SCALE         (status[16:15])
 );
-assign LED_USER    = led;
 
 
 //Mister TapeIn
@@ -381,5 +357,7 @@ ltc2308_tape  tape
   .dout		(tape_adc),
   .active	(tape_adc_act)
 );
+
+assign LED_USER    = ~tape_in;
 
 endmodule

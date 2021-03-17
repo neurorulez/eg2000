@@ -33,6 +33,10 @@ module UM6845R
 	
 	output reg       VSYNC,
 	output reg       HSYNC,
+`ifdef USE_BLANK
+   output reg       HBLANK,
+	output reg       VBLANK,
+`endif
 	output           DE,
 	output           FIELD,
 	output           CURSOR,
@@ -49,6 +53,8 @@ assign MA = row_addr + hcc;
 assign RA = line | (field & interlace[0]);
 
 assign DE = de[R8_skew & ~{2{TYPE}}];
+
+
 
 reg [7:0] R0_h_total = 0;
 reg [7:0] R1_h_displayed = 0;
@@ -246,6 +252,20 @@ wire cde = R10_cursor_mode == 2'b00 || (R10_cursor_mode == 2'b10 && curcc[4]) ||
 reg cursor_line;
 assign CURSOR = hde & vde & MA == {R14_cursor_h, R15_cursor_l} & cursor_line & cde;
 
+`ifdef USE_BLANK
+always @(posedge CLOCK) begin
+
+	if(~nRESET) begin
+		HBLANK <= 0;
+		VBLANK <= 0;
+	end
+	else if (CLKEN) begin
+	   HBLANK <= ~hde;
+		VBLANK <= ~vde;
+	end
+end
+`endif
+	
 always @(posedge CLOCK) begin
 
 	if(~nRESET) begin

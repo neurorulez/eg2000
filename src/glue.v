@@ -7,13 +7,13 @@ module glue
 
 	output wire       hsync,
 	output wire       vsync,
+`ifdef USE_CE_PIX
+	output wire       ce_pix,
+`endif	
 
 `ifdef USE_BLANK
 	output wire       hblank,
 	output wire       vblank,
-`endif	
-`ifdef USE_CE_PIX
-	output wire       ce_pix,
 `endif	
 
 	output wire       pixel,
@@ -23,14 +23,17 @@ module glue
 `ifdef USE_DAC
 	output wire       sound,
 `else
-   output wire [7:0] audio_l,
-   output wire [7:0] audio_r,
+   output wire [15:0] audio_l,
+   output wire [15:0] audio_r,
 `endif
 	input  wire[ 1:0] ps2,
+	output wire       led,
 `ifdef ZX1
 	output wire       ramWe,
 	inout  wire[ 7:0] ramDQ,
 	output wire[20:0] ramA
+`elsif USE_BRAM
+	output wire       filler
 `elsif USE_SDRAM
 	output wire       ramCk,
 	output wire       ramCe,
@@ -48,6 +51,7 @@ module glue
 
 `ifdef USE_CE_PIX
 assign ce_pix = pe8M8;
+assign ce_4   = pe2M2;
 `endif	
 
 reg[4:0] ce;
@@ -84,7 +88,7 @@ wire reset = power & F12;
 wire reset = power & F11;
 `endif
 wire nmi = F5;
-
+assign led = reset;
 wire[ 7:0] d;
 wire[ 7:0] q;
 wire[15:0] a;
@@ -129,12 +133,13 @@ UM6845R Crtc
 	.RS     (crtcRs ),
 	.DI     (q      ),
 	.DO     (crtcQ  ),
-`ifdef USE_BLANK
-   .VBLANK (vblank ),
-	.HBLANK (hblank ),
-`endif	
 	.VSYNC  (vsync  ),
 	.HSYNC  (hsync  ),
+`ifdef USE_BLANK
+	.HBLANK (hblank ),
+	.VBLANK (vblank ),
+`endif	
+
 	.DE     (crtcDe ),
 	.FIELD  (       ),
 	.CURSOR (cursor ),
@@ -173,9 +178,10 @@ jt49_bus Psg
 //-------------------------------------------------------------------------------------------------
 
 
-`ifdef USE_DAC
+
 wire[9:0] dacD = { 2'b00, psgA } + { 2'b00, psgB } + { 2'b00, psgC };
 
+`ifdef USE_DAC
 dac #(.MSBI(9)) Dac
 (
 	.clock  (clock  ),
@@ -184,7 +190,7 @@ dac #(.MSBI(9)) Dac
 	.q      (sound  )
 );
 `else
- assign audio_l = psgA+psgB+psgC;
+ assign audio_l = {dacD,6'b0};
  assign audio_r = audio_l;
 `endif
 
@@ -240,10 +246,12 @@ memory Memory
 	.q      (memQ   ),
 	.a      (a      ),
 	.keyQ   (keyQ   ),
-`ifdef ZX1
+`ifdef ZX1 
 	.ramWe  (ramWe  ),
 	.ramDQ  (ramDQ  ),
 	.ramA   (ramA   )
+`elsif USE_BRAM 
+   .filler (       )	
 `elsif USE_SDRAM
 	.ramCk  (ramCk  ),
 	.ramCe  (ramCe  ),

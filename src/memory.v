@@ -30,6 +30,8 @@ module memory
 	output wire       ramWe,
 	inout  wire[ 7:0] ramDQ,
 	output wire[20:0] ramA
+`elsif USE_BRAM
+   output wire       filler
 `elsif USE_SDRAM 
 	output wire       ramCk,
 	output wire       ramCe,
@@ -82,6 +84,23 @@ assign ramDQ = ramWe ? 8'bZ : d;
 assign ramA  = { 5'd0, a };
 
 wire[7:0] ramQ = ramDQ;
+`elsif USE_BRAM
+//-------------------------------------------------------------------------------------------------
+
+wire extWe = !(!mreq && !wr);
+wire[ 7:0] ramQ;
+//wire[13:0] extA = a[13:0];
+
+ram #(.KB(64)) ExtendedRam
+(
+        .clock  (clock  ),
+        .ce     (ce     ),
+        .we     (extWe  ),
+        .d      (d      ),
+        .q      (ramQ   ),
+        .a      (a      )
+);
+
 `elsif USE_SDRAM
 
 wire sdrRd = !(!mreq && !rd);
@@ -183,6 +202,7 @@ dprs #(.KB(1)) Char
 	.a2     (chrA2  )
 );
 
+
 //-------------------------------------------------------------------------------------------------
 
 reg[7:0] psr;
@@ -210,6 +230,7 @@ assign color
 	: mode && hrcol == 2 ? 4'h2
 	: mode && hrcol == 3 ? 4'h5
 	: csr[7:4];
+
 
 assign q
 	= a[15:14] == 2'b00 ? romQ
