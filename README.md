@@ -33,13 +33,13 @@ Sound Hardware
     3 sound channels, ADSR programmable
     1 noise channel
 ## Keys
- **F5** NMI.
- **F11** Reset on SiDi/MiSTer.
- **F12** OSD on SiDi/MiSTer, Reset on ZX1.
+ * **F5** NMI.
+ * **F11** Reset on SiDi/MiSTer.
+ * **F12** OSD on SiDi/MiSTer, Reset on ZX1.
  
 ## Coverage
 
-The core works in RGB and VGA. 
+The core works in RGB (15khz), VGA (31Khz) and HDMI. 
 Both Basic and Machine Code programs are loaded through the audio input ( CLOAD or SYSTEM ) TRS-80 style.
 
 
