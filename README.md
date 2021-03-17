@@ -1,11 +1,5 @@
-EACA EG2000 Colour Genie FPGA implementation for ZX-Uno board (http://zxuno.speccy.org/)
-
-Implements a EACA EG2000 Colour Genie with 32K or RAM
-
-F12 - EG2000 reset
-
-# eg2000.MiSTer
-# EACA EG2000 Colour Genie FPGA implementation for MiSTer board
+# eg2000
+# EACA EG2000 Colour Genie FPGA implementation. (ZX1/MiSTer/SiDi)
 
 This core is a RW-FPGA dev team project implemented by Ricardo Martinez (KYP) initially in ZXUno.
 A port to Altera has been made, covering the boards, MiST, MiSTica, SiDi and MiSTer by KYP and rampa069.
@@ -38,7 +32,11 @@ Sound Hardware
     General Instruments AY-3-8910
     3 sound channels, ADSR programmable
     1 noise channel
-
+## Keys
+ **F5** NMI.
+ **F11** Reset on SiDi/MiSTer.
+ **F12** OSD on SiDi/MiSTer, Reset on ZX1.
+ 
 ## Coverage
 
 The core works in RGB and VGA. 
