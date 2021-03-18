@@ -194,8 +194,11 @@ always @(posedge CLOCK) begin
 	end
 	else if (CLKEN) begin
 		if(line_new)                   hde <= 1;
+`ifdef USE_BLANK		
+		if(hcc_next == R1_h_displayed + 1'd1) hde <= 0;
+`else		
 		if(hcc_next == R1_h_displayed) hde <= 0;
-
+`endif
 		if(hsc) hsc <= hsc - 1'd1;
 		else if (hcc_next == R2_h_sync_pos) begin
 			if(R3_h_sync_width) begin
@@ -248,10 +251,8 @@ always @(posedge CLOCK) if (CLKEN) if(frame_new) curcc <= curcc+1'd1;
 
 wire cde = R10_cursor_mode == 2'b00 || (R10_cursor_mode == 2'b10 && curcc[4]) || (R10_cursor_mode == 2'b11 && curcc[5]);
 
-// Cursor control
-reg cursor_line;
-assign CURSOR = hde & vde & MA == {R14_cursor_h, R15_cursor_l} & cursor_line & cde;
 
+// Blank generation
 `ifdef USE_BLANK
 always @(posedge CLOCK) begin
 
@@ -265,6 +266,11 @@ always @(posedge CLOCK) begin
 	end
 end
 `endif
+
+// Cursor control
+reg cursor_line;
+assign CURSOR = hde & vde & MA == {R14_cursor_h, R15_cursor_l} & cursor_line & cde;
+
 	
 always @(posedge CLOCK) begin
 
