@@ -18,6 +18,7 @@ module glue
 
 	output wire       pixel,
 	output wire[ 3:0] color,
+	output wire			crtcDe,
 
 	input  wire       tape,
 `ifdef USE_DAC
@@ -29,6 +30,7 @@ module glue
 	input  wire[ 1:0] ps2,
 	output wire       led,
 `ifdef ZX1
+	output wire       boot,
 	output wire       ramWe,
 	inout  wire[ 7:0] ramDQ,
 	output wire[20:0] ramA
@@ -48,11 +50,6 @@ module glue
 `endif
 );
 //-------------------------------------------------------------------------------------------------
-
-`ifdef USE_CE_PIX
-assign ce_pix = pe8M8;
-assign ce_4   = pe2M2;
-`endif	
 
 reg[4:0] ce;
 always @(negedge clock) ce <= ce+1'd1;
@@ -82,16 +79,15 @@ wire ioFB = !(!iorq && a[7:0] == 8'hFB); // crtc data
 wire ioFF = !(!iorq && a[7:0] == 8'hFF);
 
 //-------------------------------------------------------------------------------------------------
-`ifdef ZX1
-wire reset = power & F12;
-`else
-wire reset = power & F11;
-`endif
-wire nmi = F5;
+
+wire reset = power & kreset;
+
 assign led = reset;
 wire[ 7:0] d;
 wire[ 7:0] q;
 wire[15:0] a;
+
+wire rfsh, mreq, iorq, rd, wr;
 
 cpu Cpu
 (
@@ -120,6 +116,8 @@ wire[ 7:0] crtcQ;
 
 wire[13:0] crtcMa;
 wire[ 4:0] crtcRa;
+
+wire cursor;
 
 UM6845R Crtc
 (
@@ -175,6 +173,7 @@ jt49_bus Psg
 	.sel    (1'b0   )
 );
 
+
 //-------------------------------------------------------------------------------------------------
 
 
@@ -198,15 +197,21 @@ dac #(.MSBI(9)) Dac
 
 wire[7:0] keyQ;
 wire[7:0] keyA = a[7:0];
+wire nmi,boot,kreset;
 
+
+`ifdef ZX1
 keyboard Keyboard
+`else
+keyboard #(.BOOT(8'h0A), .RESET(8'h78)) Keyboard //Boot(F8) - Reset(F11)
+`endif
 (
 	.clock  (clock  ),
 	.ce     (pe8M8  ),
 	.ps2    (ps2    ),
-	.f12    (F12    ),
-	.f11    (F11    ),
-	.f5     (F5     ),
+	.nmi    (nmi    ),
+	.boot   (boot   ),
+	.reset  (kreset ),
 	.q      (keyQ   ),
 	.a      (keyA   )
 );
@@ -222,6 +227,7 @@ wire[13:0] vma = crtcMa;
 wire[ 2:0] vra = crtcRa[2:0];
 
 wire[ 7:0] memQ;
+wire ven;
 
 memory Memory
 (

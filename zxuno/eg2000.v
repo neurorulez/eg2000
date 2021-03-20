@@ -47,6 +47,19 @@ always @(posedge clock) if(!power) rs <= rs+1'd1;
 
 //-------------------------------------------------------------------------------------------------
 
+reg[1:0] bc;
+always @(posedge clock) bc <= bc+1'd1;
+
+BUFG Bufg (.I(bc[1]), .O(clockmb));
+
+multiboot Multiboot
+(
+	.clock  (clockmb),
+	.reset  (boot   )
+);
+
+//-------------------------------------------------------------------------------------------------
+
 wire tape = ~ear;
 
 wire[3:0] color;
@@ -55,6 +68,7 @@ glue Glue
 (
 	.clock  (clock  ),
 	.power  (power  ),
+	.boot   (boot   ),
 	.hsync  (hsync  ),
 	.vsync  (vsync  ),
 	.pixel  (pixel  ),

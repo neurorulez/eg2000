@@ -179,7 +179,8 @@ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
 
-assign VGA_SL = 0;
+assign VGA_SL = (scale[2]==1'b1)?2'd0:scale[1:0];
+
 assign VGA_F1 = 0;
 assign VGA_SCALER = 0;
 
@@ -198,7 +199,7 @@ localparam CONF_STR = {
 	"eg2000;;",
 	"-;",
 	"O89,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-   "OAC,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+   "OAC,Scandoubler Fx,None,CRT 25%,CRT 50%,CRT 75%,HQ2x;",
 	"OFG,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
    "-;",
 	"T0,Reset;",
@@ -226,7 +227,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .PS2DIV(2500)) hps_io
 
 	.buttons		(buttons),
 	.status		(status),
-	.status_menumask({status[5]}),
+//	.status_menumask({status[5]}),
 	.ps2_kbd_clk_out (ps2[0]),
    .ps2_kbd_data_out(ps2[1])
   );
@@ -255,6 +256,7 @@ wire VBlank;
 wire VSync;
 wire ce_pix;
 wire led;
+wire pixel;
 
 reg[5:0] rs;
 wire power = rs[5] & ~status[0] & ~RESET & ~buttons[1];
@@ -274,6 +276,7 @@ glue Glue
 	.ce_pix (ce_pix ),
 	.pixel  (pixel  ),
 	.color  (color  ),
+	.crtcDe (crtcDe_tmp),
 	.tape   (~tape_in),
 	.audio_l(AUDIO_L),
 	.audio_r(AUDIO_R),
@@ -284,46 +287,74 @@ glue Glue
 
 reg[17:0] palette[15:0];
 initial begin
-	palette[15] = 18'b111000_111000_111000; // FF FF FF // 16 // white
-	palette[14] = 18'b100000_001000_111000; // 98 20 FF //  8 // magenta
-	palette[13] = 18'b001000_110000_100000; // 1F C4 8C // 14 // turquise
-	palette[12] = 18'b100000_100000_100000; // 8C 8C 8C // 13 // grey
-	palette[11] = 18'b100000_011000_111000; // 8A 67 FF // 12 // violet
-	palette[10] = 18'b110000_010000_111000; // C7 4E FF // 15 // pink
-	palette[ 9] = 18'b101000_110000_111000; // BC DF FF //  9 // light blue
-	palette[ 8] = 18'b001000_010000_111000; // 2F 53 FF //  8 // blue
-	palette[ 7] = 18'b110000_111000_001000; // EA FF 27 // 11 // yellow/green
-	palette[ 6] = 18'b111000_011000_001000; // EB 6F 2B //  5 // orange
-	palette[ 5] = 18'b101000_111000_010000; // AB FF 4A //  2 // green
-	palette[ 4] = 18'b111000_111000_001000; // FF F2 3D //  4 // yellow
-	palette[ 3] = 18'b111000_111000_111000; // EA EA EA //  1 // light grey
-	palette[ 2] = 18'b110000_001000_010000; // CB 26 5E //  3 // red
-	palette[ 1] = 18'b011000_111000_111000; // 7C FF EA //  7 // cyan
-	palette[ 0] = 18'b010000_010000_010000; // 5E 5E 5E // 10 // dark grey
+	palette[15] = 18'b111111_111111_111111; // FF FF FF // 16 // white
+	palette[14] = 18'b100110_001000_111111; // 98 20 FF //  8 // magenta
+	palette[13] = 18'b000111_110001_100011; // 1F C4 8C // 14 // turquise
+	palette[12] = 18'b100011_100011_100011; // 8C 8C 8C // 13 // grey
+	palette[11] = 18'b100010_011001_111111; // 8A 67 FF // 12 // violet
+	palette[10] = 18'b110001_010011_111111; // C7 4E FF // 15 // pink
+	palette[ 9] = 18'b101111_110111_111111; // BC DF FF //  9 // light blue
+	palette[ 8] = 18'b001011_010100_111111; // 2F 53 FF //  8 // blue
+	palette[ 7] = 18'b111010_111111_001001; // EA FF 27 // 11 // yellow/green
+	palette[ 6] = 18'b111010_011011_001010; // EB 6F 2B //  5 // orange
+	palette[ 5] = 18'b101010_111111_010010; // AB FF 4A //  2 // green
+	palette[ 4] = 18'b111111_111100_001111; // FF F2 3D //  4 // yellow
+	palette[ 3] = 18'b111010_111010_111010; // EA EA EA //  1 // light grey
+	palette[ 2] = 18'b110010_001001_010111; // CB 26 5E //  3 // red
+	palette[ 1] = 18'b011011_111111_111010; // 7C FF EA //  7 // cyan
+	palette[ 0] = 18'b010111_010111_010111; // 5E 5E 5E // 10 // dark grey
 end
 
 wire[17:0] rgbQ = pixel ? palette[color] : 1'd0;
 
 assign CLK_VIDEO = clk_sys;
 
-
-
-
 wire ce_pix_out;
 wire scandoubler = scale || forced_scandoubler;
 wire [2:0] scale = status[12:10];
+wire crtcDe_tmp;
 
+// YOM Sin Video_Mixer ni Video_Freak
+//assign CE_PIXEL = ce_pix;
+//assign VGA_R = {rgbQ[17:12],2'b0};
+//assign VGA_G = {rgbQ[11: 6],2'b0};
+//assign VGA_B = {rgbQ[ 5: 0],2'b0};
+//assign VGA_VS = VSync;
+//assign VGA_HS = HSync;
+//assign VGA_DE = crtcDe_tmp;//~(VBlank | HBlank);
+//
+//assign VIDEO_ARX = 4;
+//assign VIDEO_ARY = 3;
 
-
+// YOM Sin Video_Freak pero si con video_mixer
+//assign VIDEO_ARX = 4;
+//assign VIDEO_ARY = 3;
+//assign VGA_DE = crtcDe_tmp;
 
 video_mixer #(.LINE_LENGTH(640)) video_mixer
 (
-        .*,
-		  .R         		({rgbQ[17:12],2'b0}),
-	     .G         		({rgbQ[11: 6],2'b0}),
-	     .B         		({rgbQ[ 5: 0],2'b0}),
-        .hq2x      		(scale==1)
-		  
+	.CLK_VIDEO		(CLK_VIDEO),
+	.CE_PIXEL		(CE_PIXEL),
+	.ce_pix			(ce_pix),
+	.scandoubler	(scandoubler),
+	.gamma_bus		(gamma_bus),
+	.HSync			(HSync),
+	.VSync			(VSync),
+	.HBlank			(HBlank),
+	.VBlank			(VBlank),
+
+	// video output signals
+	.VGA_R			(VGA_R), //output reg [7:0] VGA_R,
+	.VGA_G			(VGA_G), //output reg [7:0] VGA_G,
+	.VGA_B			(VGA_B), //output reg [7:0] VGA_B,
+	.VGA_VS			(VGA_VS), //output reg       VGA_VS,
+	.VGA_HS			(VGA_HS), //output reg       VGA_HS,		
+	.VGA_DE			(VGA_DE), //output reg       VGA_DE,
+		
+	.R         		({rgbQ[17:12],2'b0}),
+   .G         		({rgbQ[11: 6],2'b0}),
+   .B         		({rgbQ[ 5: 0],2'b0}),
+	.hq2x      		(scale[2])
 );
 
 
@@ -331,7 +362,14 @@ wire [1:0] ar = status[9:8];
 
 video_freak video_freak
 (
-	.*,
+	.CLK_VIDEO		(CLK_VIDEO),
+	.CE_PIXEL		(CE_PIXEL),
+	.VGA_VS			(VGA_VS),
+	.HDMI_WIDTH		(HDMI_WIDTH), //input      [11:0] HDMI_WIDTH,
+	.HDMI_HEIGHT	(HDMI_HEIGHT), //input      [11:0] HDMI_HEIGHT,
+	.VIDEO_ARX		(VIDEO_ARX), //output reg [12:0] VIDEO_ARX,
+	.VIDEO_ARY		(VIDEO_ARY), //output reg [12:0] VIDEO_ARY,
+	
 	.VGA_DE_IN     (VGA_DE),
 	.VGA_DE        (),
 	.ARX           ((!ar) ? 12'd4 : (ar - 1'd1)),
@@ -340,6 +378,8 @@ video_freak video_freak
 	.CROP_OFF      (0),
 	.SCALE         (status[16:15])
 );
+
+
 
 
 //Mister TapeIn
