@@ -105,6 +105,8 @@ end
 
 wire[17:0] rgbQ = pixel ? palette[color] : 1'd0;
 
+assign rgb = rgbQ;
+assign sync = {vsync,hsync};
 //-------------------------------------------------------------------------------------------------
 
 assign audio = {2{sound}};
@@ -146,7 +148,7 @@ mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
 );
 
 wire [1:0] scale = status[3:2];
-*/
+
 
 video_mixer video_mixer
 (
@@ -174,7 +176,7 @@ video_mixer video_mixer
     .VGA_VS    (sync[1]    ),
     .VGA_HS    (sync[0]    )
 );
-
+*/
 
 //-------------------------------------------------------------------------------------------------
 endmodule
