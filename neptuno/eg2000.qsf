@@ -174,6 +174,7 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -
 # end ENTITY(eg2000)
 # ------------------
 set_global_assignment -name GENERATE_RBF_FILE ON
+set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name VERILOG_MACRO "USE_SDRAM=None>"
 set_global_assignment -name VERILOG_MACRO "USE_DAC=None>"
