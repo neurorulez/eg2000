@@ -52,7 +52,7 @@ wire power = rs[7];// & ~status[0];
 always @(posedge clock) if(!power) rs <= rs+1'd1;
 
 //-------------------------------------------------------------------------------------------------
-
+wire dbscan;
 wire tape = ~ear;
 
 wire[3:0] color;
@@ -61,6 +61,7 @@ glue Glue
 (
 	.clock  (clock  ),
 	.power  (power  ),
+	.dbscan (dbscan ),
 	.hsync  (hsync  ),
 	.vsync  (vsync  ),
 	.ce_pix (ce_pix ),
@@ -105,8 +106,8 @@ end
 
 wire[17:0] rgbQ = pixel ? palette[color] : 1'd0;
 
-assign rgb = rgbQ;
-assign sync = {vsync,hsync};
+//assign rgb = rgbQ;
+//assign sync = {vsync,hsync};
 //-------------------------------------------------------------------------------------------------
 
 assign audio = {2{sound}};
@@ -117,10 +118,18 @@ assign led = tape;
 
 //-------------------------------------------------------------------------------------------------
 
-wire       scandoubler_disable=1'b1;
-/*
+wire       scandoubler_disable=dbscan;
+
+
+localparam CONF_STR = {
+        "EG2000;;",
+        "T0,Reset;",
+        "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+        "V,v1.1"
+};
 
 wire[31:0] status;
+/*
 wire[ 1:0] ps2;
 
 mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
@@ -146,7 +155,7 @@ mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
     .joystick_analog_0(),
     .joystick_analog_1()
 );
-
+*/
 wire [1:0] scale = status[3:2];
 
 
@@ -176,7 +185,7 @@ video_mixer video_mixer
     .VGA_VS    (sync[1]    ),
     .VGA_HS    (sync[0]    )
 );
-*/
+
 
 //-------------------------------------------------------------------------------------------------
 endmodule

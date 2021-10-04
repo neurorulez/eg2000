@@ -5,7 +5,8 @@ module keyboard
 (
 	parameter NMI   = 8'h03, // F5
 	parameter BOOT  = 8'h78, // F11
-	parameter RESET = 8'h07  // F12
+	parameter RESET = 8'h07, // F12
+	parameter DBSCN = 8'h7E  // SCRLCK
 )
 (
 	input  wire      clock,
@@ -14,6 +15,7 @@ module keyboard
 	output wire      nmi,
 	output wire      boot,
 	output wire      reset,
+	output wire      dbscan,
 	output wire[7:0] q,
 	input  wire[7:0] a
 );
@@ -90,6 +92,7 @@ reg pressed = 1'b1;
 reg keyNmi;
 reg keyBoot;
 reg keyReset;
+reg keyDbscn;
 
 reg backspace;
 reg alt;
@@ -182,6 +185,7 @@ if(received)
 			NMI  : keyNmi    <= pressed;
 			BOOT : keyBoot   <= pressed;
 			RESET: keyReset  <= pressed;
+			DBSCN: keyDbscn  <= ~keyDbscn;
 
 			8'h66: backspace <= pressed;
 			8'h11: alt 		  <= pressed;
@@ -195,6 +199,7 @@ if(received)
 assign nmi   = ~(keyNmi   );
 assign boot  = ~(keyBoot  | (key[7][4] & alt & backspace));
 assign reset = ~(keyReset | (key[7][4] & alt & del      ));
+assign dbscn = ~(keyDbscn);
 
 wire key_6__5_ = backspace|key[6][5];
 
