@@ -184,8 +184,8 @@ data_io data_io
 	
 	.reset_n(locked),
 
-	.vga_hsync(~hsync),
-	.vga_vsync(~vsync),
+	.vga_hsync(hsync),
+	.vga_vsync(vsync),
 	
 	.red_i(R_IN),
 	.green_i(G_IN),
