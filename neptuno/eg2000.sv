@@ -44,11 +44,13 @@ module eg2000
 	output        STM_RST = 1'b0	
 );
 //-------------------------------------------------------------------------------------------------
+wire locked;
 
 clock Clock
 (
 	.inclk0 (clock50),
-	.c0     (clock  ) // 35.468 MHz
+	.c0     (clock  ), // 35.468 MHz
+	.locked (locked)
 );
 
 //-------------------------------------------------------------------------------------------------
@@ -175,7 +177,7 @@ data_io data_io
 	
 	.debug(),
 	
-	.reset_n(1'b1),
+	.reset_n(locked),
 
 	.vga_hsync(~hsync),
 	.vga_vsync(~vsync),
@@ -187,8 +189,8 @@ data_io data_io
 	.green_o(G_OSD),
 	.blue_o(B_OSD),
 	
-	.ps2k_clk_in(ps2[0] ),
-	.ps2k_dat_in(ps2[1] ),
+	.ps2k_clk_in(ps2[0]),
+	.ps2k_dat_in(ps2[1]),
 	.ps2_key(),
 	.host_scandoubler_disable(host_scandoubler),
 	

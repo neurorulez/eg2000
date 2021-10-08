@@ -33,10 +33,12 @@
 
 module clock (
 	inclk0,
-	c0);
+	c0,
+	locked);
 
 	input	  inclk0;
 	output	  c0;
+	output	  locked;
 
 endmodule
 
@@ -77,7 +79,7 @@ endmodule
 // Retrieval info: PRIVATE: INCLK1_FREQ_UNIT_COMBO STRING "MHz"
 // Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Cyclone IV E"
 // Retrieval info: PRIVATE: INT_FEEDBACK__MODE_RADIO STRING "1"
-// Retrieval info: PRIVATE: LOCKED_OUTPUT_CHECK STRING "0"
+// Retrieval info: PRIVATE: LOCKED_OUTPUT_CHECK STRING "1"
 // Retrieval info: PRIVATE: LONG_SCAN_RADIO STRING "1"
 // Retrieval info: PRIVATE: LVDS_MODE_DATA_RATE STRING "Not Available"
 // Retrieval info: PRIVATE: LVDS_MODE_DATA_RATE_DIRTY NUMERIC "0"
@@ -145,7 +147,7 @@ endmodule
 // Retrieval info: CONSTANT: PORT_FBIN STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_INCLK0 STRING "PORT_USED"
 // Retrieval info: CONSTANT: PORT_INCLK1 STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_LOCKED STRING "PORT_UNUSED"
+// Retrieval info: CONSTANT: PORT_LOCKED STRING "PORT_USED"
 // Retrieval info: CONSTANT: PORT_PFDENA STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_PHASECOUNTERSELECT STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_PHASEDONE STRING "PORT_UNUSED"
@@ -176,13 +178,16 @@ endmodule
 // Retrieval info: CONSTANT: PORT_extclk1 STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_extclk2 STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_extclk3 STRING "PORT_UNUSED"
+// Retrieval info: CONSTANT: SELF_RESET_ON_LOSS_LOCK STRING "OFF"
 // Retrieval info: CONSTANT: WIDTH_CLOCK NUMERIC "5"
 // Retrieval info: USED_PORT: @clk 0 0 5 0 OUTPUT_CLK_EXT VCC "@clk[4..0]"
 // Retrieval info: USED_PORT: c0 0 0 0 0 OUTPUT_CLK_EXT VCC "c0"
 // Retrieval info: USED_PORT: inclk0 0 0 0 0 INPUT_CLK_EXT GND "inclk0"
+// Retrieval info: USED_PORT: locked 0 0 0 0 OUTPUT GND "locked"
 // Retrieval info: CONNECT: @inclk 0 0 1 1 GND 0 0 0 0
 // Retrieval info: CONNECT: @inclk 0 0 1 0 inclk0 0 0 0 0
 // Retrieval info: CONNECT: c0 0 0 0 0 @clk 0 0 1 0
+// Retrieval info: CONNECT: locked 0 0 0 0 @locked 0 0 0 0
 // Retrieval info: GEN_FILE: TYPE_NORMAL clock.v TRUE
 // Retrieval info: GEN_FILE: TYPE_NORMAL clock.ppf TRUE
 // Retrieval info: GEN_FILE: TYPE_NORMAL clock.inc FALSE
