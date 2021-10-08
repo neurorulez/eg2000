@@ -172,7 +172,7 @@ wire host_scandoubler;
 
 data_io data_io
 (
-	.clk(clock),
+	.clk(clock50),//clock),
 	.CLOCK_50(clock50), //Para modulos de I2s y Joystick
 	
 	.debug(),
