@@ -36,6 +36,11 @@ module eg2000
 	output wire[12:0] ramA,
 
 	input  wire[ 1:0] ps2,
+
+	output        SD_SCK,
+	output        SD_MOSI,
+	input         SD_MISO,
+	output        SD_CS,
 	
 	output        MCLK,
 	output        SCLK,
