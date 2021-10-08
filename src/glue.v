@@ -5,7 +5,6 @@ module glue
 	input  wire       clock,
 	input  wire       power,
 
-	output wire       dbscan,
 	output wire       hsync,
 	output wire       vsync,
 `ifdef USE_CE_PIX
@@ -213,7 +212,6 @@ keyboard #(.BOOT(8'h0A), .RESET(8'h78)) Keyboard //Boot(F8) - Reset(F11)
 	.nmi    (nmi    ),
 	.boot   (boot   ),
 	.reset  (kreset ),
-	.dbscan (dbscan ),
 	.q      (keyQ   ),
 	.a      (keyA   )
 );

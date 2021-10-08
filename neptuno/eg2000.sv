@@ -35,7 +35,13 @@ module eg2000
 	output wire[ 1:0] ramBA,
 	output wire[12:0] ramA,
 
-	input  wire[ 1:0] ps2
+	input  wire[ 1:0] ps2,
+	
+	output        MCLK,
+	output        SCLK,
+	output        LRCLK,
+	output        SDIN,
+	output        STM_RST = 1'b0	
 );
 //-------------------------------------------------------------------------------------------------
 
@@ -52,23 +58,22 @@ wire power = rs[7];// & ~status[0];
 always @(posedge clock) if(!power) rs <= rs+1'd1;
 
 //-------------------------------------------------------------------------------------------------
-wire dbscan;
-wire tape = ~ear;
 
+wire tape = ~ear;
+wire[15:0] audio_dac;
 wire[3:0] color;
 
 glue Glue
 (
 	.clock  (clock  ),
 	.power  (power  ),
-	.dbscan (dbscan ),
 	.hsync  (hsync  ),
 	.vsync  (vsync  ),
 	.ce_pix (ce_pix ),
 	.pixel  (pixel  ),
 	.color  (color  ),
 	.tape   (tape   ),
-	.sound  (sound  ),
+	.audio_l(audio_dac),//.sound  (sound  ),
 	.ps2    (ps2    ),
 	.ramCk  (ramCk  ),
 	.ramCe  (ramCe  ),
@@ -110,7 +115,7 @@ wire[17:0] rgbQ = pixel ? palette[color] : 1'd0;
 //assign sync = {vsync,hsync};
 //-------------------------------------------------------------------------------------------------
 
-assign audio = {2{sound}};
+//assign audio = {2{sound}};
 
 //-------------------------------------------------------------------------------------------------
 
@@ -118,7 +123,7 @@ assign led = tape;
 
 //-------------------------------------------------------------------------------------------------
 
-wire       scandoubler_disable=dbscan;
+wire       scandoubler_disable=host_scandoubler;
 
 
 localparam CONF_STR = {
@@ -129,7 +134,8 @@ localparam CONF_STR = {
 };
 
 wire[31:0] status;
-/*
+
+`ifndef CYCLONE
 wire[ 1:0] ps2;
 
 mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
@@ -155,9 +161,75 @@ mist_io #(.STRLEN(($size(CONF_STR)>>3)), .PS2DIV(2500)) mist_io
     .joystick_analog_0(),
     .joystick_analog_1()
 );
-*/
-wire [1:0] scale = status[3:2];
+`else
+wire [7:0]R_OSD,G_OSD,B_OSD;
+wire [7:0]R_IN={rgbQ[17:12],2'b00};
+wire [7:0]G_IN={rgbQ[11: 6],2'b00};
+wire [7:0]B_IN={rgbQ[ 5: 0],2'b00};
+wire host_scandoubler;
 
+data_io data_io
+(
+	.clk(clock),
+	.CLOCK_50(clock50), //Para modulos de I2s y Joystick
+	
+	.debug(),
+	
+	.reset_n(1'b1),
+
+	.vga_hsync(~hsync),
+	.vga_vsync(~vsync),
+	
+	.red_i(R_IN),
+	.green_i(G_IN),
+	.blue_i(B_IN),
+	.red_o(R_OSD),
+	.green_o(G_OSD),
+	.blue_o(B_OSD),
+	
+	.ps2k_clk_in(ps2[0] ),
+	.ps2k_dat_in(ps2[1] ),
+	.ps2_key(),
+	.host_scandoubler_disable(host_scandoubler),
+	
+`ifndef JOYDC
+	.JOY_CLK(),
+	.JOY_LOAD(),
+	.JOY_DATA(),
+	.JOY_SELECT(),
+	.joy1(),
+	.joy2(),
+`endif
+	.dac_MCLK(MCLK),
+	.dac_LRCK(LRCLK),
+	.dac_SCLK(SCLK),
+	.dac_SDIN(SDIN),
+	.sigma_L(audio[0]),
+	.sigma_R(audio[1]),
+	.L_data(audio_dac),
+	.R_data(audio_dac),
+	
+	.spi_miso(SD_MISO),
+	.spi_mosi(SD_MOSI),
+	.spi_clk(SD_SCK),
+	.spi_cs(SD_CS),
+
+	.img_mounted(img_mounted),
+	.img_size(img_size),
+
+	.status(status),
+	
+	.ioctl_ce(1'b1),
+	.ioctl_wr(ioctl_wr),
+	.ioctl_addr(ioctl_addr),
+	.ioctl_dout(ioctl_dout),
+	.ioctl_download(ioctl_download),
+	.ioctl_index(ioctl_index),
+	.ioctl_file_ext()
+);
+`endif
+
+wire [1:0] scale = status[3:2];
 
 video_mixer video_mixer
 (
@@ -176,9 +248,15 @@ video_mixer video_mixer
     .ypbpr_full(0),
     .HSync     (hsync),
     .VSync     (vsync),
+`ifndef CYCLONE
     .R         (rgbQ[17:12]),
     .G         (rgbQ[11: 6]),
     .B         (rgbQ[ 5: 0]),
+`else
+	 .R         (R_OSD[7:2]),
+	 .G         (G_OSD[7:2]),
+	 .B         (B_OSD[7:2]),
+`endif	 
     .VGA_R     (rgb[17:12] ),
     .VGA_G     (rgb[11: 6] ),
     .VGA_B     (rgb[ 5: 0] ),
